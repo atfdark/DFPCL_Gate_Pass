@@ -21,6 +21,14 @@ CREATE TABLE IF NOT EXISTS public.lots (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Foreign key: link passes to lots via po_number
+-- Run this AFTER both tables exist:
+ALTER TABLE public.passes
+    ADD CONSTRAINT fk_passes_lots
+    FOREIGN KEY (po_number)
+    REFERENCES public.lots(po_number)
+    ON DELETE SET NULL;
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_passes_po ON public.passes(po_number);
 CREATE INDEX IF NOT EXISTS idx_lots_vendor ON public.lots(vendor_code);

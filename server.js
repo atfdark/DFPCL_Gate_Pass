@@ -42,27 +42,32 @@ const upload = multer();
 // List all lots (with passes_issued count)
 app.get('/api/lots', async (req, res) => {
     const search = req.query.search || '';
-    
-    try {
-        // Fetch lots and their corresponding pass counts
-        let { data: lots, error } = await supabase
-            .from('lots')
-            .select(`
-                *,
-                passes:passes(id)
-            `)
-            .order('created_at', { ascending: false });
 
+    try {
+        // Fetch all lots
+        let query = supabase.from('lots').select('*').order('created_at', { ascending: false });
+        const { data: lots, error } = await query;
         if (error) throw error;
 
-        // Process lots to include passes_issued count
+        // Count passes per PO number in one query
+        const { data: passCounts, error: pcErr } = await supabase
+            .from('passes')
+            .select('po_number');
+        if (pcErr) throw pcErr;
+
+        // Build a map: po_number -> count
+        const countMap = {};
+        (passCounts || []).forEach(p => {
+            countMap[p.po_number] = (countMap[p.po_number] || 0) + 1;
+        });
+
         const processedLots = lots.map(lot => ({
             ...lot,
-            passes_issued: lot.passes ? lot.passes.length : 0
+            passes_issued: countMap[lot.po_number] || 0
         }));
 
         if (search) {
-            const filteredLots = processedLots.filter(lot => 
+            const filteredLots = processedLots.filter(lot =>
                 lot.po_number.toLowerCase().includes(search.toLowerCase())
             );
             return res.json({ lots: filteredLots });
@@ -71,7 +76,7 @@ app.get('/api/lots', async (req, res) => {
         res.json({ lots: processedLots });
     } catch (err) {
         console.error('Error fetching lots:', err.message);
-        res.status(500).json({ error: 'Database error' });
+        res.status(500).json({ error: 'Database error: ' + err.message });
     }
 });
 
@@ -82,18 +87,22 @@ app.get('/api/lots/by-po/:poNumber', async (req, res) => {
     try {
         const { data: lot, error } = await supabase
             .from('lots')
-            .select(`
-                *,
-                passes:passes(id)
-            `)
+            .select('*')
             .eq('po_number', poNumber)
-            .single();
+            .maybeSingle();
 
         if (error || !lot) {
             return res.json({ found: false });
         }
 
-        const issued = lot.passes ? lot.passes.length : 0;
+        // Count passes for this PO separately
+        const { count, error: cErr } = await supabase
+            .from('passes')
+            .select('id', { count: 'exact', head: true })
+            .eq('po_number', poNumber);
+        if (cErr) throw cErr;
+
+        const issued = count || 0;
         res.json({
             found: true,
             lot: { ...lot, passes_issued: issued },
@@ -147,18 +156,22 @@ app.get('/api/lots/by-vendor/:vendorCode', async (req, res) => {
     try {
         const { data: lot, error } = await supabase
             .from('lots')
-            .select(`
-                *,
-                passes:passes(id)
-            `)
+            .select('*')
             .eq('vendor_code', vendorCode)
-            .single();
+            .maybeSingle();
 
         if (error || !lot) {
             return res.json({ found: false });
         }
 
-        const issued = lot.passes ? lot.passes.length : 0;
+        // Count passes for this PO separately
+        const { count, error: cErr } = await supabase
+            .from('passes')
+            .select('id', { count: 'exact', head: true })
+            .eq('po_number', lot.po_number);
+        if (cErr) throw cErr;
+
+        const issued = count || 0;
         res.json({
             found: true,
             lot: { ...lot, passes_issued: issued },
@@ -250,12 +263,16 @@ app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) =>
         // 2. Check if this PO has capacity
         const { data: lot, error: lotCheckErr } = await supabase
             .from('lots')
-            .select(`team_size, passes:passes(id)`)
+            .select('team_size')
             .eq('po_number', poNumber)
             .maybeSingle();
 
         if (lot) {
-            const issued = lot.passes ? lot.passes.length : 0;
+            const { count: issuedCount } = await supabase
+                .from('passes')
+                .select('id', { count: 'exact', head: true })
+                .eq('po_number', poNumber);
+            const issued = issuedCount || 0;
             if (issued >= lot.team_size) {
                 return res.status(400).json({ 
                     error: `All ${lot.team_size} passes for PO "${poNumber}" have been issued. No capacity remaining.`
@@ -304,11 +321,15 @@ app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) =>
         };
 
         if (lot) {
-            const issued = lot.passes ? lot.passes.length : 0;
+            const { count: finalCount } = await supabase
+                .from('passes')
+                .select('id', { count: 'exact', head: true })
+                .eq('po_number', poNumber);
+            const issuedNow = finalCount || 1;
             responseData.lotInfo = {
                 teamSize: lot.team_size,
-                issued: issued + 1,
-                remaining: lot.team_size - issued - 1
+                issued: issuedNow,
+                remaining: lot.team_size - issuedNow
             };
         }
 
