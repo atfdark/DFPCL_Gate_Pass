@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editNote = document.getElementById('editNote');
     const saveEditBtn = document.getElementById('saveEditBtn');
 
-    const API_BASE = 'http://localhost:3000';
+    const API_BASE = '';
 
     // ===== Dynamic label for PO vs Contract Number =====
     contractTypeSelect.addEventListener('change', () => {

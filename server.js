@@ -1,70 +1,28 @@
+require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+// Supabase Configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.warn('Warning: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are NOT set in environment variables.');
+    console.warn('Database operations will fail.');
+}
+
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '')));
-
-const fs = require('fs');
-const screenshotsDir = path.join(__dirname, 'passes_screenshots');
-if (!fs.existsSync(screenshotsDir)) {
-    fs.mkdirSync(screenshotsDir);
-}
-app.use('/passes', express.static(screenshotsDir));
-
-// Database Setup
-const db = new sqlite3.Database('./gatepass.db', (err) => {
-    if (err) {
-        console.error('Error opening database', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-
-        // Existing passes table
-        db.run(`CREATE TABLE IF NOT EXISTS passes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            vendor_code TEXT,
-            po_number TEXT,
-            screenshot_path TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`, (err) => {
-            if (err) {
-                console.error('Error creating passes table', err.message);
-            } else {
-                db.run(`ALTER TABLE passes ADD COLUMN screenshot_path TEXT`, () => {});
-                db.run(`ALTER TABLE passes ADD COLUMN fiscal_year TEXT`, () => {});
-                db.run(`ALTER TABLE passes ADD COLUMN aadhaar TEXT`, () => {});
-            }
-        });
-
-        // New lots table for PO/Contract team management
-        db.run(`CREATE TABLE IF NOT EXISTS lots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            contract_type TEXT NOT NULL,
-            po_number TEXT NOT NULL UNIQUE,
-            team_size INTEGER NOT NULL,
-            vendor_code TEXT,
-            po_valid_upto TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`, (err) => {
-            if (err) {
-                console.error('Error creating lots table', err.message);
-            } else {
-                console.log('Lots table ready.');
-                // Safely attempt to add columns for existing databases
-                db.run(`ALTER TABLE lots ADD COLUMN vendor_code TEXT`, () => {});
-                db.run(`ALTER TABLE lots ADD COLUMN po_valid_upto TEXT`, () => {});
-            }
-        });
-    }
-});
 
 const upload = multer();
 
@@ -73,123 +31,138 @@ const upload = multer();
 // =============================================
 
 // List all lots (with passes_issued count)
-app.get('/api/lots', (req, res) => {
+app.get('/api/lots', async (req, res) => {
     const search = req.query.search || '';
-    let query = `
-        SELECT lots.*, 
-               COALESCE(pass_counts.cnt, 0) AS passes_issued
-        FROM lots
-        LEFT JOIN (
-            SELECT po_number, COUNT(*) as cnt 
-            FROM passes 
-            GROUP BY po_number
-        ) pass_counts ON lots.po_number = pass_counts.po_number
-    `;
-    const params = [];
+    
+    try {
+        // Fetch lots and their corresponding pass counts
+        let { data: lots, error } = await supabase
+            .from('lots')
+            .select(`
+                *,
+                passes:passes(id)
+            `)
+            .order('created_at', { ascending: false });
 
-    if (search) {
-        query += ` WHERE lots.po_number LIKE ?`;
-        params.push(`%${search}%`);
-    }
+        if (error) throw error;
 
-    query += ` ORDER BY lots.created_at DESC`;
+        // Process lots to include passes_issued count
+        const processedLots = lots.map(lot => ({
+            ...lot,
+            passes_issued: lot.passes ? lot.passes.length : 0
+        }));
 
-    db.all(query, params, (err, rows) => {
-        if (err) {
-            console.error('Error fetching lots:', err.message);
-            return res.status(500).json({ error: 'Database error' });
+        if (search) {
+            const filteredLots = processedLots.filter(lot => 
+                lot.po_number.toLowerCase().includes(search.toLowerCase())
+            );
+            return res.json({ lots: filteredLots });
         }
-        res.json({ lots: rows });
-    });
+
+        res.json({ lots: processedLots });
+    } catch (err) {
+        console.error('Error fetching lots:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
-// Get single lot by PO number (used by gate pass form)
-app.get('/api/lots/by-po/:poNumber', (req, res) => {
-    const poNumber = req.params.poNumber;
+// Get single lot by PO number
+app.get('/api/lots/by-po/:poNumber', async (req, res) => {
+    const { poNumber } = req.params;
 
-    const query = `
-        SELECT lots.*, 
-               COALESCE(pass_counts.cnt, 0) AS passes_issued
-        FROM lots
-        LEFT JOIN (
-            SELECT po_number, COUNT(*) as cnt 
-            FROM passes 
-            GROUP BY po_number
-        ) pass_counts ON lots.po_number = pass_counts.po_number
-        WHERE lots.po_number = ?
-    `;
+    try {
+        const { data: lot, error } = await supabase
+            .from('lots')
+            .select(`
+                *,
+                passes:passes(id)
+            `)
+            .eq('po_number', poNumber)
+            .single();
 
-    db.get(query, [poNumber], (err, row) => {
-        if (err) {
-            console.error('Error fetching lot:', err.message);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (!row) {
+        if (error || !lot) {
             return res.json({ found: false });
         }
+
+        const issued = lot.passes ? lot.passes.length : 0;
         res.json({
             found: true,
-            lot: row,
-            remaining: row.team_size - row.passes_issued
+            lot: { ...lot, passes_issued: issued },
+            remaining: lot.team_size - issued
         });
-    });
+    } catch (err) {
+        console.error('Error fetching lot:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Create a new lot
-app.post('/api/lots', (req, res) => {
+app.post('/api/lots', async (req, res) => {
     const { contractType, poNumber, teamSize, vendorCode, poValidUpto } = req.body;
 
     if (!contractType || !poNumber || !teamSize) {
         return res.status(400).json({ error: 'Required fields are missing' });
     }
 
-    const query = `INSERT INTO lots (contract_type, po_number, team_size, vendor_code, po_valid_upto) VALUES (?, ?, ?, ?, ?)`;
-    db.run(query, [contractType, poNumber, parseInt(teamSize), vendorCode || null, poValidUpto || null], function(err) {
-        if (err) {
-            if (err.message.includes('UNIQUE')) {
+    try {
+        const { data, error } = await supabase
+            .from('lots')
+            .insert([{
+                contract_type: contractType,
+                po_number: poNumber,
+                team_size: parseInt(teamSize),
+                vendor_code: vendorCode || null,
+                po_valid_upto: poValidUpto || null
+            }])
+            .select()
+            .single();
+
+        if (error) {
+            if (error.code === '23505') { // Postgres Unique Violation
                 return res.status(409).json({ error: `PO/Contract number "${poNumber}" is already registered` });
             }
-            console.error('Error creating lot:', err.message);
-            return res.status(500).json({ error: 'Database error' });
+            throw error;
         }
-        res.json({ success: true, id: this.lastID });
-    });
+
+        res.json({ success: true, id: data.id });
+    } catch (err) {
+        console.error('Error creating lot:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
-// Get single lot by Vendor Code (used for auto-fill in gate pass form)
-app.get('/api/lots/by-vendor/:vendorCode', (req, res) => {
-    const vendorCode = req.params.vendorCode;
+// Get single lot by Vendor Code
+app.get('/api/lots/by-vendor/:vendorCode', async (req, res) => {
+    const { vendorCode } = req.params;
 
-    const query = `
-        SELECT lots.*, 
-               COALESCE(pass_counts.cnt, 0) AS passes_issued
-        FROM lots
-        LEFT JOIN (
-            SELECT po_number, COUNT(*) as cnt 
-            FROM passes 
-            GROUP BY po_number
-        ) pass_counts ON lots.po_number = pass_counts.po_number
-        WHERE lots.vendor_code = ?
-    `;
+    try {
+        const { data: lot, error } = await supabase
+            .from('lots')
+            .select(`
+                *,
+                passes:passes(id)
+            `)
+            .eq('vendor_code', vendorCode)
+            .single();
 
-    db.get(query, [vendorCode], (err, row) => {
-        if (err) {
-            console.error('Error fetching lot by vendor:', err.message);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (!row) {
+        if (error || !lot) {
             return res.json({ found: false });
         }
+
+        const issued = lot.passes ? lot.passes.length : 0;
         res.json({
             found: true,
-            lot: row,
-            remaining: row.team_size - row.passes_issued
+            lot: { ...lot, passes_issued: issued },
+            remaining: lot.team_size - issued
         });
-    });
+    } catch (err) {
+        console.error('Error fetching lot by vendor:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Update lot team size
-app.put('/api/lots/:id', (req, res) => {
+app.put('/api/lots/:id', async (req, res) => {
     const { teamSize } = req.body;
     const lotId = req.params.id;
 
@@ -197,48 +170,55 @@ app.put('/api/lots/:id', (req, res) => {
         return res.status(400).json({ error: 'Valid team size is required' });
     }
 
-    // Check that new team size is not below already issued passes
-    db.get(`SELECT lots.po_number, COALESCE(pc.cnt, 0) as issued 
-            FROM lots 
-            LEFT JOIN (SELECT po_number, COUNT(*) as cnt FROM passes GROUP BY po_number) pc 
-            ON lots.po_number = pc.po_number 
-            WHERE lots.id = ?`, [lotId], (err, row) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-        if (!row) return res.status(404).json({ error: 'Lot not found' });
+    try {
+        // Check current issued count
+        const { data: lot, error: lotErr } = await supabase
+            .from('lots')
+            .select(`po_number, passes:passes(id)`)
+            .eq('id', lotId)
+            .single();
 
-        if (parseInt(teamSize) < row.issued) {
+        if (lotErr || !lot) return res.status(404).json({ error: 'Lot not found' });
+
+        const issued = lot.passes ? lot.passes.length : 0;
+        if (parseInt(teamSize) < issued) {
             return res.status(400).json({ 
-                error: `Cannot set team size below ${row.issued} (passes already issued)` 
+                error: `Cannot set team size below ${issued} (passes already issued)` 
             });
         }
 
-        db.run(`UPDATE lots SET team_size = ? WHERE id = ?`, [parseInt(teamSize), lotId], function(err) {
-            if (err) return res.status(500).json({ error: 'Database error' });
-            res.json({ success: true });
-        });
-    });
+        const { error: updateErr } = await supabase
+            .from('lots')
+            .update({ team_size: parseInt(teamSize) })
+            .eq('id', lotId);
+
+        if (updateErr) throw updateErr;
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Database update error:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Delete a lot
-app.delete('/api/lots/:id', (req, res) => {
+app.delete('/api/lots/:id', async (req, res) => {
     const lotId = req.params.id;
-    db.run(`DELETE FROM lots WHERE id = ?`, [lotId], function(err) {
-        if (err) {
-            console.error('Error deleting lot:', err.message);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (this.changes === 0) {
-            return res.status(404).json({ error: 'Lot not found' });
-        }
+    try {
+        const { error } = await supabase.from('lots').delete().eq('id', lotId);
+        if (error) throw error;
         res.json({ success: true });
-    });
+    } catch (err) {
+        console.error('Error deleting lot:', err.message);
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // =============================================
-// GATE PASS API (existing + enhanced with lot check)
+// GATE PASS API
 // =============================================
 
-app.post('/api/generate-pass', upload.single('photoUpload'), (req, res) => {
+app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) => {
     const { firstName, surname, vendorCode, poNumber, aadhaar } = req.body;
     const name = `${firstName || ''} ${surname || ''}`.trim();
 
@@ -246,39 +226,40 @@ app.post('/api/generate-pass', upload.single('photoUpload'), (req, res) => {
         return res.status(400).json({ error: 'Aadhaar number is required.' });
     }
 
-    // Check if Aadhaar already used
-    db.get(`SELECT id FROM passes WHERE aadhaar = ?`, [aadhaar], (aadhaarErr, aadhaarRow) => {
-        if (aadhaarErr) return res.status(500).json({ error: 'Database check failed' });
-        if (aadhaarRow) {
+    try {
+        // 1. Check if Aadhaar already used
+        const { data: existingPass, error: accCheckErr } = await supabase
+            .from('passes')
+            .select('id')
+            .eq('aadhaar', aadhaar)
+            .maybeSingle();
+
+        if (existingPass) {
             return res.status(409).json({ error: 'This Aadhaar card has already been used to generate a pass.' });
         }
 
-        // Check if this PO has a registered lot with capacity remaining
-        const lotQuery = `
-            SELECT lots.team_size, COALESCE(pc.cnt, 0) as issued
-            FROM lots
-            LEFT JOIN (SELECT po_number, COUNT(*) as cnt FROM passes GROUP BY po_number) pc
-            ON lots.po_number = pc.po_number
-            WHERE lots.po_number = ?
-        `;
+        // 2. Check if this PO has capacity
+        const { data: lot, error: lotCheckErr } = await supabase
+            .from('lots')
+            .select(`team_size, passes:passes(id)`)
+            .eq('po_number', poNumber)
+            .maybeSingle();
 
-    db.get(lotQuery, [poNumber], (lotErr, lotRow) => {
-        // If lot exists, enforce capacity
-        if (!lotErr && lotRow) {
-            if (lotRow.issued >= lotRow.team_size) {
+        if (lot) {
+            const issued = lot.passes ? lot.passes.length : 0;
+            if (issued >= lot.team_size) {
                 return res.status(400).json({ 
-                    error: `All ${lotRow.team_size} passes for PO "${poNumber}" have been issued. No capacity remaining.`
+                    error: `All ${lot.team_size} passes for PO "${poNumber}" have been issued. No capacity remaining.`
                 });
             }
         }
 
-        // Proceed to create the pass
-        // Compute fiscal year dynamically (April to March)
+        // 3. Compute fiscal year
         const now = new Date();
         const year = now.getFullYear();
-        const month = now.getMonth(); // 0-indexed
+        const month = now.getMonth();
         let fyStart, fyEnd;
-        if (month >= 3) { // April (3) onwards = current year start
+        if (month >= 3) {
             fyStart = year;
             fyEnd = year + 1;
         } else {
@@ -287,70 +268,95 @@ app.post('/api/generate-pass', upload.single('photoUpload'), (req, res) => {
         }
         const fiscalYear = `FY ${fyStart}/${String(fyEnd).slice(2)}`;
 
-        const query = `INSERT INTO passes (name, vendor_code, po_number, fiscal_year, aadhaar) VALUES (?, ?, ?, ?, ?)`;
-        db.run(query, [name, vendorCode, poNumber, fiscalYear, aadhaar], function(err) {
-            if (err) {
-                console.error('Error inserting into database', err.message);
-                return res.status(500).json({ error: 'Database execution error' });
-            }
+        // 4. Create the pass
+        const { data: newPass, error: createPassErr } = await supabase
+            .from('passes')
+            .insert([{
+                name,
+                vendor_code: vendorCode,
+                po_number: poNumber,
+                fiscal_year: fiscalYear,
+                aadhaar
+            }])
+            .select()
+            .single();
 
-            const passId = this.lastID;
-            const paddedId = String(passId).padStart(5, '0');
+        if (createPassErr) throw createPassErr;
 
-            const responseData = { 
-                success: true, 
-                passId: passId, 
-                paddedId: paddedId,
-                fiscalYear: fiscalYear,
-                passNumber: `${fiscalYear} / ${paddedId}`
+        const passId = newPass.id;
+        const paddedId = String(passId).padStart(5, '0');
+
+        const responseData = { 
+            success: true, 
+            passId: passId, 
+            paddedId: paddedId,
+            fiscalYear: fiscalYear,
+            passNumber: `${fiscalYear} / ${paddedId}`
+        };
+
+        if (lot) {
+            const issued = lot.passes ? lot.passes.length : 0;
+            responseData.lotInfo = {
+                teamSize: lot.team_size,
+                issued: issued + 1,
+                remaining: lot.team_size - issued - 1
             };
+        }
 
-            // If lot exists, include remaining info
-            if (!lotErr && lotRow) {
-                responseData.lotInfo = {
-                    teamSize: lotRow.team_size,
-                    issued: lotRow.issued + 1,
-                    remaining: lotRow.team_size - lotRow.issued - 1
-                };
-            }
-
-            res.json(responseData);
-        });
-    });
-});
+        res.json(responseData);
+    } catch (err) {
+        console.error('Error in generate-pass:', err.message);
+        res.status(500).json({ error: 'Database execution error' });
+    }
 });
 
-// Save screenshot (unchanged)
-app.post('/api/save-screenshot', (req, res) => {
+// Save screenshot to Supabase Storage
+app.post('/api/save-screenshot', async (req, res) => {
     const { passId, imageBase64 } = req.body;
 
     if (!passId || !imageBase64) {
         return res.status(400).json({ error: 'Missing passId or imageBase64' });
     }
 
-    const base64Data = imageBase64.replace(/^data:image\/png;base64,/, "");
-    const fileName = `pass_${passId}_${Date.now()}.png`;
-    const filePath = path.join(__dirname, 'passes_screenshots', fileName);
-    const dbFilePath = `/passes/${fileName}`;
+    try {
+        const base64Data = imageBase64.replace(/^data:image\/png;base64,/, "");
+        const fileName = `pass_${passId}_${Date.now()}.png`;
+        const buffer = Buffer.from(base64Data, 'base64');
 
-    fs.writeFile(filePath, base64Data, 'base64', (err) => {
-        if (err) {
-            console.error('Error saving screenshot file:', err);
-            return res.status(500).json({ error: 'Failed to save screenshot' });
-        }
+        // Upload to Supabase Storage (Bucket name: gate-passes)
+        const { data: uploadData, error: uploadErr } = await supabase
+            .storage
+            .from('gate-passes')
+            .upload(fileName, buffer, {
+                contentType: 'image/png',
+                upsert: true
+            });
 
-        const upDbQuery = `UPDATE passes SET screenshot_path = ? WHERE id = ?`;
-        db.run(upDbQuery, [dbFilePath, passId], function(updateErr) {
-            if (updateErr) {
-                console.error('Error updating database with screenshot path:', updateErr);
-                return res.status(500).json({ error: 'Failed to update database' });
-            }
-            res.json({ success: true, path: dbFilePath });
-        });
-    });
+        if (uploadErr) throw uploadErr;
+
+        // Get public URL
+        const { data: urlData } = supabase
+            .storage
+            .from('gate-passes')
+            .getPublicUrl(fileName);
+
+        const publicUrl = urlData.publicUrl;
+
+        // Update database with public URL
+        const { error: updateErr } = await supabase
+            .from('passes')
+            .update({ screenshot_path: publicUrl })
+            .eq('id', passId);
+
+        if (updateErr) throw updateErr;
+
+        res.json({ success: true, path: publicUrl });
+    } catch (err) {
+        console.error('Error saving screenshot:', err.message);
+        res.status(500).json({ error: 'Failed to save screenshot: ' + err.message });
+    }
 });
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
-    console.log(`Press Ctrl+C to close it. Open your browser and go to http://localhost:${port}`);
 });

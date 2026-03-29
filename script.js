@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(vendorLookupDebounce);
                 vendorLookupDebounce = setTimeout(async () => {
                     try {
-                        const res = await fetch(`http://localhost:3000/api/lots/by-vendor/${code}`);
+                        const res = await fetch(`/api/lots/by-vendor/${code}`);
                         const data = await res.json();
                         
                         if (data.found) {
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         lookupDebounce = setTimeout(async () => {
             try {
-                const res = await fetch(`http://localhost:3000/api/lots/by-po/${poVal}`);
+                const res = await fetch(`/api/lots/by-po/${poVal}`);
                 const data = await res.json();
 
                 if (data.found) {
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Generate Unique ID from SQL Database via Node API
         let generatedPassId = null;
         try {
-            const response = await fetch('http://localhost:3000/api/generate-pass', {
+            const response = await fetch('/api/generate-pass', {
                 method: 'POST',
                 body: formData
             });
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const base64Image = canvas.toDataURL('image/png');
                     
                     // Upload screenshot to backend
-                    const uploadResponse = await fetch('http://localhost:3000/api/save-screenshot', {
+                    const uploadResponse = await fetch('/api/save-screenshot', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
