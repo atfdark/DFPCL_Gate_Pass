@@ -80,30 +80,42 @@ document.addEventListener('DOMContentLoaded', () => {
             if (code.length === 7) {
                 clearTimeout(vendorLookupDebounce);
                 vendorLookupDebounce = setTimeout(async () => {
+                    console.log(`[Vendor Lookup] Searching for code: ${code}`);
                     try {
                         const res = await fetch(`/api/lots/by-vendor/${code}`);
                         const data = await res.json();
                         
                         if (data.found) {
+                            console.log('[Vendor Lookup] Lot found! Data:', data.lot);
                             const lot = data.lot;
-                            // Auto-fill contract type
+                            
+                            // 1. Set Contract Type (Category)
                             contractTypeSelect.value = lot.contract_type;
                             contractTypeSelect.dispatchEvent(new Event('change'));
                             
-                            // Auto-fill PO Number
+                            // 2. Set PO Number
                             poNumberInput.value = lot.po_number;
-                            // Trigger the input events so companyCode logic and lookupPOLot() execute
-                            poNumberInput.dispatchEvent(new Event('input'));
                             
-                            // Auto-fill PO Validity
+                            // 3. Set PO Validity
                             if (lot.po_valid_upto) {
                                 poValidityInput.value = lot.po_valid_upto;
                             }
+
+                            // 4. Trigger lookup for the box (Small delay to let Category change settle)
+                            setTimeout(() => {
+                                poNumberInput.dispatchEvent(new Event('input'));
+                            }, 50);
+
+                            // Optional: Visual feedback
+                            vendorCodeInput.style.borderColor = '#34d399';
+                        } else {
+                            console.warn('[Vendor Lookup] No lot found for code:', code);
+                            vendorCodeInput.style.borderColor = '';
                         }
                     } catch (e) {
-                        console.error('Vendor code auto-fill fast lookup failed', e);
+                        console.error('[Vendor Lookup] API error:', e);
                     }
-                }, 300);
+                }, 400);
             }
         });
     }
