@@ -1,0 +1,16 @@
+# Dependenies
+node_modules/
+.vercel
+
+# Environment variables
+.env
+.env.local
+
+# Databases and Local Storage
+*.db
+*.db-journal
+passes_screenshots/
+
+# OS files
+.DS_Store
+Thumbs.db
