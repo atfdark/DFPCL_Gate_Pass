@@ -8,21 +8,20 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Middleware - STATIC SERVING SHOULD COME FIRST
+app.use(express.static(path.join(__dirname, '')));
+
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+
 // Supabase Configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
     console.warn('Warning: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are NOT set in environment variables.');
-    console.warn('Database operations will fail.');
 }
-
 const supabase = createClient(supabaseUrl || '', supabaseKey || '');
-
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, '')));
 
 // Explicit route for root - helps Vercel's Express preset
 app.get('/', (req, res) => {
