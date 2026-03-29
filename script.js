@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    document.getElementById('displayPassID').textContent = 'GATE PASS No. ' + data.passNumber;
+                    document.getElementById('displayPassID').textContent = 'Gate Pass no: ' + data.passNumber;
                     generatedPassId = data.passId;
 
                     // Update lot info box if lot data was returned
@@ -366,17 +366,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn("API route hit error, running locally");
                 
                 // Local fallback counter
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const fyStart = month >= 3 ? year : year - 1;
+                const fyEnd = fyStart + 1;
+                const fyStr = `${String(fyStart).slice(2)}-${String(fyEnd).slice(2)}`;
+                
                 let localCount = parseInt(localStorage.getItem('localPassCount') || '0') + 1;
                 localStorage.setItem('localPassCount', localCount);
-                document.getElementById('displayPassID').textContent = 'GATE PASS No. ' + String(localCount).padStart(5, '0');
+                document.getElementById('displayPassID').textContent = 'Gate Pass no: ' + fyStr + '/ ' + String(localCount).padStart(5, '0');
             }
         } catch (err) {
             console.warn("Server not reachable, falling back to static UI", err);
             
             // Local fallback counter
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const fyStart = month >= 3 ? year : year - 1;
+            const fyEnd = fyStart + 1;
+            const fyStr = `${String(fyStart).slice(2)}-${String(fyEnd).slice(2)}`;
+            
             let localCount = parseInt(localStorage.getItem('localPassCount') || '0') + 1;
             localStorage.setItem('localPassCount', localCount);
-            document.getElementById('displayPassID').textContent = 'GATE PASS No. ' + String(localCount).padStart(5, '0');
+            document.getElementById('displayPassID').textContent = 'Gate Pass no: ' + fyStr + '/ ' + String(localCount).padStart(5, '0');
         }
 
         // Show Modal

@@ -298,7 +298,7 @@ app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) =>
             fyStart = year - 1;
             fyEnd = year;
         }
-        const fiscalYear = `FY ${fyStart}/${String(fyEnd).slice(2)}`;
+        const fiscalYear = `${String(fyStart).slice(2)}-${String(fyEnd).slice(2)}`;
 
         // 4. Create the pass
         const { data: newPass, error: createPassErr } = await supabase
@@ -323,7 +323,7 @@ app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) =>
             passId: passId, 
             paddedId: paddedId,
             fiscalYear: fiscalYear,
-            passNumber: paddedId
+            passNumber: `${fiscalYear}/ ${paddedId}`
         };
 
         if (lot) {
