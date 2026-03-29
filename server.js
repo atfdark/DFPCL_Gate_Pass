@@ -149,9 +149,10 @@ app.post('/api/lots', async (req, res) => {
     }
 });
 
-// Get single lot by Vendor Code
 app.get('/api/lots/by-vendor/:vendorCode', async (req, res) => {
-    const { vendorCode } = req.params;
+    const vendorCode = req.params.vendorCode ? req.params.vendorCode.trim() : '';
+
+    console.log(`[API] Searching for Vendor Code: "${vendorCode}"`);
 
     try {
         const { data: lot, error } = await supabase
