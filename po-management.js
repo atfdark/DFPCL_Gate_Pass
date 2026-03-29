@@ -27,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
             poNumberInput.setAttribute('pattern', '\\d{10}');
             poNumberInput.setAttribute('minlength', '10');
             poNumberInput.setAttribute('maxlength', '10');
+        } else if (type === 'MANPOWER') {
+            poLabel.textContent = 'OP Number *';
+            poNumberInput.placeholder = '9 Digit OP Number';
+            poNumberInput.setAttribute('pattern', '\\d{9}');
+            poNumberInput.setAttribute('minlength', '9');
+            poNumberInput.setAttribute('maxlength', '9');
         } else {
             poLabel.textContent = 'PO Number *';
             poNumberInput.placeholder = '9 Digit PO Number';

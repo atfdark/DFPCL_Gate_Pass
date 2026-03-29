@@ -34,18 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
             poNumberInput.setAttribute('pattern', '\\d{10}');
             poNumberInput.setAttribute('minlength', '10');
             poNumberInput.setAttribute('maxlength', '10');
-            
-            // clear invalid value if typing before change
-            if (poNumberInput.value.length > 10) poNumberInput.value = poNumberInput.value.slice(0, 10);
+        } else if (type === 'MANPOWER') {
+            poNumberLabel.textContent = 'OP Number *';
+            poNumberInput.placeholder = '9 Digit OP Number';
+            poNumberInput.setAttribute('pattern', '\\d{9}');
+            poNumberInput.setAttribute('minlength', '9');
+            poNumberInput.setAttribute('maxlength', '9');
         } else {
             poNumberLabel.textContent = 'PO Number *';
             poNumberInput.placeholder = '9 Digit PO Number';
             poNumberInput.setAttribute('pattern', '\\d{9}');
             poNumberInput.setAttribute('minlength', '9');
             poNumberInput.setAttribute('maxlength', '9');
-            
-            // clear invalid value if typing before change
-            if (poNumberInput.value.length > 9) poNumberInput.value = poNumberInput.value.slice(0, 9);
         }
     });
 
@@ -293,7 +293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         displayVendor.textContent = formData.get('vendorCode');
         displayAadhaar.textContent = aadhaar; // Show full Aadhaar as requested
         const contractType = formData.get('contractType');
-        displayPOLabel.textContent = contractType === 'ARC' ? 'Contract No:' : 'PO No:';
+        if (contractType === 'ARC') {
+            displayPOLabel.textContent = 'Contract No:';
+        } else if (contractType === 'MANPOWER') {
+            displayPOLabel.textContent = 'OP No:';
+        } else {
+            displayPOLabel.textContent = 'PO No:';
+        }
         displayPO.textContent = formData.get('poNumber');
         
         // Populate DOB & Age

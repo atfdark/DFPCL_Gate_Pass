@@ -155,15 +155,20 @@ app.get('/api/lots/by-vendor/:vendorCode', async (req, res) => {
     console.log(`[API] Searching for Vendor Code: "${vendorCode}"`);
 
     try {
-        const { data: lot, error } = await supabase
+        const { data: lots, error } = await supabase
             .from('lots')
             .select('*')
             .eq('vendor_code', vendorCode)
-            .maybeSingle();
+            .order('created_at', { ascending: false })
+            .limit(1);
 
-        if (error || !lot) {
+        if (error || !lots || lots.length === 0) {
+            console.warn(`[API] No lot found for Vendor Code: ${vendorCode}`);
             return res.json({ found: false });
         }
+
+        const lot = lots[0];
+        console.log(`[API] Found lot: ${lot.po_number} for vendor: ${vendorCode}`);
 
         // Count passes for this PO separately
         const { count, error: cErr } = await supabase
