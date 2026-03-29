@@ -103,11 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (percentage < 90) barColorClass = 'yellow';
             else barColorClass = 'red';
 
-            const createdDate = new Date(lot.created_at.replace(' ', 'T') + 'Z').toLocaleString('en-IN', {
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', hour12: true
-            });
+            let createdDate = '-';
+            try {
+                // Supabase returns proper ISO 8601 (e.g. "2026-03-29T16:10:00+00:00")
+                // Old SQLite returned "2026-03-29 16:10:00" — handle both
+                const rawDate = lot.created_at.includes('T') 
+                    ? lot.created_at  // Already ISO format from Supabase
+                    : lot.created_at.replace(' ', 'T') + 'Z'; // Legacy SQLite format
+                createdDate = new Date(rawDate).toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                });
+            } catch (_) { /* keep '-' */ }
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
