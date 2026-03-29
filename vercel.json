@@ -1,6 +1,14 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/server.js" },
+    { "src": "/style.css", "dest": "/style.css" },
+    { "src": "/po-management.css", "dest": "/po-management.css" },
+    { "src": "/script.js", "dest": "/script.js" },
+    { "src": "/po-management.js", "dest": "/po-management.js" },
+    { "src": "/logo.png", "dest": "/logo.png" },
+    { "src": "/signature.png", "dest": "/signature.png" },
+    { "src": "/po-management.html", "dest": "/po-management.html" },
+    { "src": "/(.*)", "dest": "/server.js" }
   ]
 }
