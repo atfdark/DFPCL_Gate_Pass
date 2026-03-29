@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Pass Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=4">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <img src="logo.png" alt="DFPCL Logo" class="header-logo">
+            <h1>Gate Pass Management</h1>
+            <p>Generate and preview secure access credentials</p>
+            <nav class="header-nav">
+                <a href="po-management.html" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Lot Management
+                </a>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <!-- Form Section -->
+            <section class="form-section panel glass-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 style="margin-bottom: 0;">Applicant Details</h2>
+                    <button type="button" id="clearFormBtn" class="btn" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                        Clear Form
+                    </button>
+                </div>
+                <form id="gatePassForm">
+                    <div class="form-grid">
+                        <!-- Group 1: Personal Docs -->
+                        <div class="form-group">
+                            <label for="aadhaar">Aadhaar Card No. *</label>
+                            <input type="text" id="aadhaar" name="aadhaar" pattern="\d{12}" minlength="12"
+                                maxlength="12" required placeholder="12 Digit Aadhaar Number">
+                        </div>
+                        <div class="form-group">
+                            <label for="vendorCode">Vendor Code *</label>
+                            <input type="text" id="vendorCode" name="vendorCode" pattern="\d{7}" minlength="7"
+                                maxlength="7" required placeholder="7 Digit Vendor Code">
+                        </div>
+                        
+                        <!-- Photo upload -->
+                        <div class="form-group">
+                            <label for="photoUpload">Applicant Photo (Passport Size) *</label>
+                            <input type="file" id="photoUpload" name="photoUpload" accept="image/*" required style="padding: 0.5rem; background: var(--glass-bg);">
+                        </div>
+
+                        <!-- Group 2: Name details -->
+                        <div class="form-group full-width">
+                            <label for="contractorName">Contractor Name *</label>
+                            <input type="text" id="contractorName" name="contractorName" required
+                                placeholder="Full Contractor Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="firstName">First Name *</label>
+                            <input type="text" id="firstName" name="firstName" required placeholder="First Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="middleName">Middle Name</label>
+                            <input type="text" id="middleName" name="middleName" placeholder="Middle Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="surname">Surname *</label>
+                            <input type="text" id="surname" name="surname" required placeholder="Surname">
+                        </div>
+
+                        <!-- Group 3: Personal Info -->
+                        <div class="form-group">
+                            <label for="dob">Date of Birth *</label>
+                            <input type="date" id="dob" name="dob" required>
+                            <span id="dobError" class="error-text hidden"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age *</label>
+                            <input type="number" id="age" name="age" min="18" max="60" required
+                                placeholder="Autofilled from DOB" readonly>
+                        </div>
+
+                        <!-- Group 4: Professional details -->
+                        <div class="form-group">
+                            <label for="contractType">Type of Contract *</label>
+                            <select id="contractType" name="contractType" required>
+                                <option value="" disabled selected>Select Contract Type</option>
+                                <option value="ARC">ARC</option>
+                                <option value="PO">PO</option>
+                                <option value="CAPEX">CAPEX</option>
+                                <option value="SHUTDOWN">SHUTDOWN</option>
+                            </select>
+                        </div>
+                        <!-- Group 5: PO Details -->
+                        <div class="form-group">
+                            <label for="poNumber" id="poNumberLabel">PO / Contract Number *</label>
+                            <input type="text" id="poNumber" name="poNumber" required
+                                placeholder="Select Contract Type First" disabled>
+                            <!-- PO Lot Info Box -->
+                            <div id="poLotInfo" class="po-lot-info hidden">
+                                <div class="lot-info-header">
+                                    <span class="lot-info-badge" id="lotStatusBadge">Registered</span>
+                                    <span class="lot-info-type" id="lotInfoType"></span>
+                                </div>
+                                <div class="lot-info-stats">
+                                    <div class="lot-stat">
+                                        <span class="lot-stat-label">Team Size</span>
+                                        <span class="lot-stat-value" id="lotTeamSize">—</span>
+                                    </div>
+                                    <div class="lot-stat">
+                                        <span class="lot-stat-label">Issued</span>
+                                        <span class="lot-stat-value" id="lotIssued">—</span>
+                                    </div>
+                                    <div class="lot-stat">
+                                        <span class="lot-stat-label">Remaining</span>
+                                        <span class="lot-stat-value highlight" id="lotRemaining">—</span>
+                                    </div>
+                                </div>
+                                <div class="lot-progress-bar">
+                                    <div class="lot-progress-fill" id="lotProgressFill"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="companyCode">DFPCL Company Code: *</label>
+                            <select id="companyCode" name="companyCode" required>
+                                <option value="" disabled selected>Select Company Code</option>
+                                <option value="1100">1100</option>
+                                <option value="2100">2100</option>
+                                <option value="4100">4100</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="poValidity">PO Valid upto *</label>
+                            <input type="date" id="poValidity" name="poValidity" required>
+                        </div>
+                        <!-- Group 6: Durations -->
+                        <div class="form-group">
+                            <label for="expiryDate">Gate Pass Expiry Date *</label>
+                            <input type="date" id="expiryDate" name="expiryDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-primary" id="previewBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Generate & Preview Pass
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Preview Modal/Overlay (Hidden initially) -->
+            <div id="previewModal" class="modal-overlay hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Gate Pass Preview</h2>
+                        <button class="close-btn" id="closePreviewBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- THE ACTUAL GATE PASS (13cm x 8cm) -->
+                        <div class="gate-pass-wrapper">
+                            <div class="gate-pass card-layout" id="gatePassCard">
+                                <div class="card-left">
+                                    <img src="logo.png" alt="Logo" class="pass-logo">
+                                    <div class="company-brand">DFPCL</div>
+                                    <div class="photo-placeholder" style="overflow: hidden;">
+                                        <img id="displayPhoto" src="" alt="Passport Photo" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                                        <svg id="photoIcon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </div>
+                                    <div class="info-badge" id="displayCategory">COMP: -</div>
+                                    <div class="info-badge highlight" id="displayContractType">TYPE: -</div>
+                                </div>
+
+                                <div class="card-right">
+                                    <div class="card-header">
+                                        <h3>AUTHORISED GATE PASS</h3>
+                                    </div>
+                                    <div class="card-details-grid">
+                                        <div class="detail-row">
+                                            <span class="label">Name:</span>
+                                            <span class="value block-value" id="displayName">-</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="label">Contractor:</span>
+                                            <span class="value block-value" id="displayContractor">-</span>
+                                        </div>
+                                        <div class="detail-row">
+                                            <span class="label">DOB / Age:</span>
+                                            <span class="value block-value">
+                                                <span id="displayDOB">-</span> (<span id="displayAge">-</span> yrs)
+                                            </span>
+                                        </div>
+                                        <div class="detail-columns">
+                                            <div class="detail-col">
+                                                <span class="label">Vendor Code:</span>
+                                                <span class="value" id="displayVendor">-</span>
+                                            </div>
+                                            <div class="detail-col">
+                                                <span class="label">Aadhaar No:</span>
+                                                <span class="value" id="displayAadhaar">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="detail-columns">
+                                            <div class="detail-col">
+                                                <span class="label" id="displayPOLabel">PO No:</span>
+                                                <span class="value" id="displayPO">-</span>
+                                            </div>
+                                            <div class="detail-col">
+                                                <span class="label">Exp Date:</span>
+                                                <span class="value highlight-text" id="displayExpiry">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+                                        <div class="pass-id" id="displayPassID" style="text-align: left; margin-bottom: 4px;">GATE PASS No. FY 2025/26 / -----</div>
+                                        <div class="auth-sign-container">
+                                            <img src="signature.png" alt="Signature" class="signature-img">
+                                            <div class="auth-sign">Authorized Signatory</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <p class="dimensions-note">Pass Dimensions: 13 cm &times; 8 cm</p>
+                        <button class="btn btn-secondary" id="printBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2">
+                                </path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
+                            Print Pass
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js?v=8"></script>
+</body>
+
+</html>

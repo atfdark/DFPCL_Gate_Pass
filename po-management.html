@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PO / Contract Lot Management — DFPCL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="po-management.css">
+</head>
+
+<body>
+    <div class="app-container wide">
+        <header class="app-header">
+            <img src="logo.png" alt="DFPCL Logo" class="header-logo">
+            <h1>Lot Management</h1>
+            <p>Register PO / Contract numbers with team sizes</p>
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                        <polyline points="10 17 15 12 10 7" />
+                        <line x1="15" y1="12" x2="3" y2="12" />
+                    </svg>
+                    Gate Pass Form
+                </a>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <!-- Register New Lot -->
+            <section class="form-section panel glass-panel">
+                <h2>Register New Lot</h2>
+                <form id="lotForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="lotContractType">Type of Contract *</label>
+                            <select id="lotContractType" name="contractType" required>
+                                <option value="" disabled selected>Select Contract Type</option>
+                                <option value="ARC">ARC</option>
+                                <option value="PO">PO</option>
+                                <option value="CAPEX">CAPEX</option>
+                                <option value="SHUTDOWN">SHUTDOWN</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="lotPoNumber" id="lotPoLabel">PO / Contract Number *</label>
+                            <input type="text" id="lotPoNumber" name="poNumber" required
+                                placeholder="Select Contract Type First" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="lotTeamSize">Team Size (Total Workers) *</label>
+                            <input type="number" id="lotTeamSize" name="teamSize" min="1" max="500" required
+                                placeholder="e.g. 25">
+                        </div>
+                        <div class="form-group">
+                            <label for="lotVendorCode">Vendor Code *</label>
+                            <input type="text" id="lotVendorCode" name="vendorCode" pattern="\d{7}" minlength="7" maxlength="7" required placeholder="7 Digit Vendor Code">
+                        </div>
+                        <div class="form-group">
+                            <label for="lotPoValidUpto">PO Valid Upto *</label>
+                            <input type="date" id="lotPoValidUpto" name="poValidUpto" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="registerBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>
+                            Register Lot
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Registered Lots Table -->
+            <section class="panel glass-panel lots-table-section">
+                <div class="table-header-row">
+                    <h2>Registered Lots</h2>
+                    <div class="search-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <input type="text" id="searchLots" placeholder="Search by PO number...">
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="lotsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Contract Type</th>
+                                <th>PO / Contract No.</th>
+                                <th>Vendor Code</th>
+                                <th>Valid Upto</th>
+                                <th>Team Size</th>
+                                <th>Passes Issued</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
+                                <th>Registered On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lotsTableBody">
+                            <!-- Rows loaded dynamically -->
+                        </tbody>
+                    </table>
+                    <div class="empty-state hidden" id="emptyState">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <p>No lots registered yet</p>
+                        <span>Use the form above to register your first PO / Contract lot</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Lot Modal -->
+    <div id="editLotModal" class="modal-overlay hidden">
+        <div class="modal-content compact-modal">
+            <div class="modal-header">
+                <h2>Edit Lot Team Size</h2>
+                <button class="close-btn" id="closeEditModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body edit-modal-body">
+                <input type="hidden" id="editLotId">
+                <div class="form-group">
+                    <label for="editTeamSize">New Team Size *</label>
+                    <input type="number" id="editTeamSize" min="1" max="500" required placeholder="Enter new team size">
+                </div>
+                <p class="edit-note" id="editNote"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="po-management.js?v=2"></script>
+</body>
+
+</html>

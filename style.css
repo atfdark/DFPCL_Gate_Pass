@@ -1,0 +1,920 @@
+:root {
+    --bg-primary: #0b1326;
+    --bg-secondary: #131b2e;
+    --bg-surface: #171f33;
+    --bg-surface-high: #222a3d;
+    --bg-surface-highest: #2d3449;
+    --text-primary: #dae2fd;
+    --text-secondary: #8c909f;
+    --text-muted: #6b7280;
+    --accent: #4d8eff;
+    --accent-light: #adc6ff;
+    --accent-hover: #2563eb;
+    --accent-deep: #1e40af;
+    --error: #ef4444;
+    --border: rgba(66, 71, 84, 0.25);
+    --glass-bg: rgba(23, 31, 51, 0.6);
+    --glass-border: rgba(173, 198, 255, 0.08);
+    --glow-blue: rgba(77, 142, 255, 0.15);
+
+    /* Gate Pass Specific Variables */
+    --pass-width: 13cm;
+    --pass-height: 8cm;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-primary);
+    background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(77, 142, 255, 0.12), transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.06), transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(77, 142, 255, 0.03), transparent 70%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 2.5rem 1.5rem;
+}
+
+body.modal-open {
+    overflow: hidden;
+    padding-right: 15px; /* Prevent layout shift when scrollbar disappears (approx 15px) */
+}
+
+/* ===== ENTRANCE ANIMATION ===== */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.app-container {
+    width: 100%;
+    max-width: 1020px;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    animation: fadeSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.app-container.wide {
+    max-width: 1300px;
+}
+
+/* ===== HEADER ===== */
+.app-header {
+    text-align: center;
+    padding-bottom: 0.5rem;
+}
+
+.header-logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    background: white;
+    border-radius: 18px;
+    padding: 10px;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 0 30px rgba(77, 142, 255, 0.25), 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(173, 198, 255, 0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.header-logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 40px rgba(77, 142, 255, 0.4), 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.app-header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #adc6ff 0%, #4d8eff 50%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.02em;
+}
+
+.app-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+/* ===== NAVIGATION ===== */
+.header-nav {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--accent-light);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid rgba(173, 198, 255, 0.15);
+    border-radius: 0.5rem;
+    background: rgba(77, 142, 255, 0.06);
+    transition: all 0.25s ease;
+}
+
+.nav-link:hover {
+    background: rgba(77, 142, 255, 0.15);
+    border-color: rgba(77, 142, 255, 0.35);
+    box-shadow: 0 0 20px rgba(77, 142, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+/* ===== PO LOT INFO BOX ===== */
+.po-lot-info {
+    margin-top: 0.5rem;
+    background: rgba(77, 142, 255, 0.06);
+    border: 1px solid rgba(77, 142, 255, 0.15);
+    border-radius: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    animation: fadeSlideUp 0.3s ease forwards;
+}
+
+.po-lot-info.hidden {
+    display: none;
+}
+
+.po-lot-info.lot-full {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.lot-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.lot-info-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.lot-info-badge.full {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.lot-info-type {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.lot-info-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+}
+
+.lot-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.lot-stat-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.lot-stat-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.lot-stat-value.highlight {
+    color: #34d399;
+}
+
+.lot-stat-value.danger {
+    color: #f87171;
+}
+
+.lot-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.lot-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease, background 0.3s ease;
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.lot-progress-fill.yellow {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.lot-progress-fill.red {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+/* ===== GLASS PANEL ===== */
+.panel {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 1rem;
+    padding: 2.5rem;
+    box-shadow: 0 0 40px rgba(173, 198, 255, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle top-edge glow */
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
+    opacity: 0.3;
+}
+
+.form-section h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.form-section h2 + .form-grid {
+    margin-top: 1.5rem;
+}
+
+/* ===== FORM GRID ===== */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+/* ===== LABELS — Industrial Blueprinted Style ===== */
+label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* ===== INPUTS & SELECTS ===== */
+input, select {
+    background: rgba(45, 52, 73, 0.4);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:hover, select:hover {
+    border-color: rgba(77, 142, 255, 0.3);
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--glow-blue), 0 0 20px rgba(77, 142, 255, 0.08);
+    background: rgba(45, 52, 73, 0.6);
+}
+
+input.is-invalid, select.is-invalid {
+    border-color: var(--error);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+input.is-invalid:focus, select.is-invalid:focus {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15), 0 0 20px rgba(239, 68, 68, 0.08);
+}
+
+.error-text {
+    color: var(--error);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.2rem;
+    display: block;
+}
+
+.error-text.hidden {
+    display: none;
+}
+
+input::placeholder {
+    color: #475569;
+    font-weight: 400;
+}
+
+input[readonly] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+select option {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* ===== FILE INPUT CUSTOM STYLE ===== */
+input[type="file"] {
+    padding: 0.5rem;
+    background: rgba(45, 52, 73, 0.4);
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.35rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-right: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    box-shadow: 0 0 12px rgba(77, 142, 255, 0.4);
+}
+
+/* ===== FORM ACTIONS ===== */
+.form-actions {
+    margin-top: 2.5rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.8rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
+    color: #001a42;
+    box-shadow: 0 4px 16px rgba(77, 142, 255, 0.3);
+    letter-spacing: 0.02em;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(77, 142, 255, 0.45), 0 0 40px rgba(77, 142, 255, 0.15);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(77, 142, 255, 0.3);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--accent-light);
+    border: 1px solid rgba(66, 71, 84, 0.4);
+}
+
+.btn-secondary:hover {
+    background: rgba(77, 142, 255, 0.08);
+    border-color: rgba(77, 142, 255, 0.3);
+    box-shadow: 0 0 20px rgba(77, 142, 255, 0.1);
+}
+
+/* ===== MODAL STYLES ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(6, 14, 32, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--bg-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 0 60px rgba(77, 142, 255, 0.08), 0 25px 50px rgba(0, 0, 0, 0.5);
+    transform: scale(0.92) translateY(10px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+tbody td {
+    padding: 0.75rem 0.6rem;
+    border-bottom: 1px solid rgba(66, 71, 84, 0.15);
+    color: var(--text-primary);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.wide-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 95%;
+}
+
+.modal-header {
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(34, 42, 61, 0.5);
+}
+
+.modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.close-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.modal-body {
+    padding: 2.5rem 2rem;
+    display: block;
+    text-align: center;
+    background: var(--bg-primary);
+    overflow-x: auto;
+}
+
+.modal-footer {
+    padding: 1.25rem 2rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(34, 42, 61, 0.3);
+}
+
+.dimensions-note {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ===== THE GATE PASS CARD (13cm x 8cm) ===== */
+.gate-pass-wrapper {
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.6));
+    margin: 0 auto;
+    display: inline-block;
+}
+
+.gate-pass {
+    width: var(--pass-width);
+    height: var(--pass-height);
+    background: white;
+    color: #111827;
+    border-radius: 8px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #d1d5db;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+}
+
+/* Card Left Sidebar */
+.card-left {
+    background: linear-gradient(180deg, #0f2d6e 0%, #1e40af 40%, #3b82f6 100%);
+    color: white;
+    width: 3.5cm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.2cm 0;
+    gap: 0.25cm;
+    position: relative;
+}
+
+/* Subtle light stripe on card left */
+.card-left::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.pass-logo {
+    width: 1.5cm;
+    height: 1.5cm;
+    object-fit: contain;
+    flex-shrink: 0;
+    background: white;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+.company-brand {
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+
+.photo-placeholder {
+    width: 1.8cm;
+    height: 2.25cm;
+    min-height: 2.25cm;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.7);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.info-badge {
+    background: rgba(255,255,255,0.15);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    width: 80%;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.info-badge.highlight {
+    background: #fbbf24;
+    color: #78350f;
+}
+
+/* Card Right Content */
+.card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5cm;
+    position: relative;
+}
+
+.card-header {
+    text-align: center;
+    border-bottom: 2px solid #1e40af;
+    padding-bottom: 4px;
+    margin-bottom: 0.3cm;
+}
+
+.card-header h3 {
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #1e40af;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.pass-id {
+    font-weight: 900;
+    font-size: 13px;
+    color: #000000;
+    letter-spacing: 0.5px;
+    font-family: 'Courier New', monospace;
+}
+
+.card-details-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+}
+
+.detail-row .label {
+    width: 2.2cm;
+    font-weight: 600;
+    color: #4b5563;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.detail-row .value {
+    font-weight: 700;
+    flex: 1;
+    font-size: 11px;
+}
+
+.block-value {
+    background: #f0f4ff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #e0e7ff;
+}
+
+.detail-columns {
+    display: flex;
+    gap: 0.2cm;
+}
+
+.detail-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    font-size: 10px;
+    background: #f8fafc;
+    padding: 4px 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+}
+
+.detail-col .label {
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 2px;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.detail-col .value {
+    font-weight: 700;
+    font-size: 11px;
+    color: #1e293b;
+}
+
+.highlight-text {
+    color: #dc2626;
+    font-weight: 800;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: auto;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+}
+
+.barcode {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: -2px;
+    transform: scaleY(1.5);
+    transform-origin: bottom;
+}
+
+.auth-sign-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 3cm;
+}
+
+.signature-img {
+    height: 25px;
+    max-width: 100%;
+    object-fit: contain;
+    margin-bottom: 2px;
+}
+
+.auth-sign {
+    font-size: 8px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-align: center;
+    border-top: 1px solid #374151;
+    width: 100%;
+    padding-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    @page {
+        size: 13cm 8cm;
+        margin: 0;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: white !important;
+    }
+
+    /* Hide everything first */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Show only the gate pass card and its parents */
+    #previewModal,
+    #previewModal .modal-content,
+    #previewModal .modal-body,
+    #previewModal .gate-pass-wrapper,
+    #previewModal .gate-pass,
+    #previewModal .gate-pass * {
+        visibility: visible !important;
+    }
+
+    .form-section,
+    .app-header,
+    .header-nav,
+    .modal-header,
+    .modal-footer {
+        display: none !important;
+    }
+
+    .app-container, .main-content {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        background: transparent !important;
+    }
+
+    #previewModal {
+        display: block !important;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 13cm;
+        height: 8cm;
+        margin: 0;
+        padding: 0;
+        background: white !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 9999;
+    }
+
+    .modal-overlay {
+        background: none !important;
+        backdrop-filter: none !important;
+    }
+
+    .modal-content {
+        margin: 0;
+        padding: 0;
+        border: none !important;
+        box-shadow: none !important;
+        width: 13cm;
+        height: 8cm;
+        background: transparent !important;
+        overflow: hidden;
+        border-radius: 0 !important;
+        transform: none !important;
+    }
+
+    .modal-body {
+        margin: 0;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    .gate-pass-wrapper {
+        margin: 0;
+        padding: 0;
+        display: block;
+        filter: none !important;
+    }
+
+    .gate-pass {
+        border: none !important;
+        margin: 0;
+        width: 13cm;
+        height: 8cm;
+        box-sizing: border-box;
+        border-radius: 0;
+    }
+}
