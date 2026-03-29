@@ -317,7 +317,7 @@ app.post('/api/generate-pass', upload.single('photoUpload'), async (req, res) =>
             passId: passId, 
             paddedId: paddedId,
             fiscalYear: fiscalYear,
-            passNumber: `${fiscalYear} / ${paddedId}`
+            passNumber: paddedId
         };
 
         if (lot) {
