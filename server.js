@@ -24,6 +24,16 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '')));
 
+// Explicit route for root - helps Vercel's Express preset
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Explicit route for po-management
+app.get('/po-management', (req, res) => {
+    res.sendFile(path.join(__dirname, 'po-management.html'));
+});
+
 const upload = multer();
 
 // =============================================
