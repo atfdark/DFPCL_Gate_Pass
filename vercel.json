@@ -1,14 +1,24 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "index.html",
+          "po-management.html",
+          "style.css",
+          "po-management.css",
+          "script.js",
+          "po-management.js",
+          "logo.png",
+          "signature.png"
+        ]
+      }
+    }
+  ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/server.js" },
-    { "src": "/style.css", "dest": "/style.css" },
-    { "src": "/po-management.css", "dest": "/po-management.css" },
-    { "src": "/script.js", "dest": "/script.js" },
-    { "src": "/po-management.js", "dest": "/po-management.js" },
-    { "src": "/logo.png", "dest": "/logo.png" },
-    { "src": "/signature.png", "dest": "/signature.png" },
-    { "src": "/po-management.html", "dest": "/po-management.html" },
     { "src": "/(.*)", "dest": "/server.js" }
   ]
 }
